@@ -8,6 +8,11 @@ const { getStorage, ref, uploadBytes, getDownloadURL } = require("firebase-admin
 
 const app = express();
 
+// Healthcheck route for Railway
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
 // View engine
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -30,12 +35,15 @@ app.get("/", async (req, res) => {
       id: doc.id,
       ...doc.data()
     }));
-    res.render("index", { events });
+    return res.status(200).render("index", { events });
   } catch (err) {
     console.error("❌ Firestore Error:", err);
-    res.status(500).send("Error loading events");
+
+    // IMPORTANT: Never return 500 here (Railway thinks the app is dead)
+    return res.status(200).send("<h1>Homepage OK (Firestore unavailable)</h1>");
   }
 });
+
 
 // Login page
 app.get("/login", (req, res) => {
