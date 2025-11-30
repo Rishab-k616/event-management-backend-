@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login | College Event Management</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #0f172a;
+      color: #f1f5f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .login-container {
+      background-color: #1e293b;
+      padding: 40px;
+      border-radius: 15px;
+      width: 350px;
+      text-align: center;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+    }
+
+    h2 {
+      color: #38bdf8;
+      margin-bottom: 25px;
+    }
+
+    input {
+      width: 90%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      background-color: #334155;
+      color: #f1f5f9;
+    }
+
+    button {
+      background-color: #38bdf8;
+      color: #0f172a;
+      font-weight: 600;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    button:hover {
+      background-color: #0ea5e9;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="login-container">
+    <h2>Login</h2>
+
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="password" id="password" placeholder="Password" required />
+    <button id="loginBtn">Login</button>
+  </div>
+
+  <!-- ✅ Firebase Login Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+  apiKey: "AIzaSyBSPmiOa60NAJ0KLniR0Vdby7yEU27ihBQ",
+  authDomain: "ourgueventapp.firebaseapp.com",
+  projectId: "ourgueventapp",
+  storageBucket: "ourgueventapp.firebasestorage.app",
+  messagingSenderId: "616548274363",
+  appId: "1:616548274363:web:5bd175552ff2f73a8f199e",
+  measurementId: "G-HQD8JYLRNY"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // ✅ Admin Email (you can change it)
+    const adminEmail = "admin@123gmail.com";
+    const studentEmail = "student@gmail.com"
+
+
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // ✅ Redirect based on email
+        if (email === adminEmail) {
+          window.location.href = "/admin";
+        } else {
+          window.location.href = "/";
+        }
+
+      } catch (error) {
+        alert("❌ Login failed: " + error.message);
+      }
+    });
+  </script>
+</body>
+</html>

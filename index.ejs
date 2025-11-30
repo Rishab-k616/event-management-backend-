@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>College Event Management</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #0f172a;
+      color: #f1f5f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #1e293b;
+      padding: 25px 0;
+      text-align: center;
+    }
+
+    header h1 {
+      color: #38bdf8;
+      font-size: 28px;
+      margin: 0;
+    }
+
+    /* ✅ Navbar below title */
+    nav.navbar {
+      background-color: #1e293b;
+      display: flex;
+      justify-content: center;
+      padding: 12px 0;
+      border-top: 1px solid #334155;
+      border-bottom: 1px solid #334155;
+    }
+
+    nav.navbar ul {
+      list-style: none;
+      display: flex;
+      gap: 30px;
+      padding: 0;
+      margin: 0;
+    }
+
+    nav.navbar a {
+      color: #38bdf8;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    nav.navbar a:hover {
+      color: #0ea5e9;
+    }
+
+    main {
+      padding: 40px;
+      text-align: center;
+    }
+
+    h2 {
+      color: #ffffff;
+      margin-bottom: 20px;
+    }
+
+    .event-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 25px;
+    }
+
+    .event-card {
+      background-color: #334155;
+      width: 280px;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: transform 0.2s ease;
+    }
+
+    .event-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .event-card h3 {
+      color: #38bdf8;
+      margin-bottom: 10px;
+    }
+
+    .event-card p {
+      font-size: 14px;
+      color: #e2e8f0;
+      margin: 5px 0;
+    }
+
+    .register-btn {
+      background-color: #38bdf8;
+      color: #0f172a;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .register-btn:hover {
+      background-color: #0ea5e9;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ✅ HEADER WITH TITLE -->
+  <header>
+    <h1>🎓 GU Events</h1>
+  </header>
+
+  <!-- ✅ NAVBAR BELOW TITLE -->
+  <nav class="navbar">
+    <ul>
+  <li><a href="/">Home</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/contact">Contact</a></li>
+  <li><a href="/login">Login</a></li>
+</ul>
+
+  </nav>
+
+  <!-- ✅ MAIN SECTION -->
+  <main>
+    <h2>Upcoming Events</h2>
+
+    <div class="event-list">
+      <% events.forEach(event => { %>
+        <div class="event-card">
+          <h3><%= event.title %></h3>
+          <p><%= event.description %></p>
+          <p><strong>Date:</strong> <%= event.date %></p>
+          <button class="register-btn" data-id="<%= event.id %>">Register</button>
+        </div>
+      <% }) %>
+    </div>
+  </main>
+
+  <!-- ✅ Firebase Script (Registration Logic) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // ✅ Replace with your actual Firebase config
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+
+    // ✅ Track login state
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+    });
+
+    // ✅ Handle registration click
+    document.querySelectorAll(".register-btn").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const eventId = e.target.dataset.id;
+
+        if (!currentUser) {
+          alert("Please log in to register for this event.");
+          window.location.href = "/student-login";
+          return;
+        }
+
+        try {
+          await setDoc(doc(db, "registrations", `${currentUser.uid}_${eventId}`), {
+            userId: currentUser.uid,
+            eventId,
+            email: currentUser.email,
+            timestamp: new Date()
+          });
+          alert("✅ You registered successfully!");
+        } catch (error) {
+          alert("❌ Error registering: " + error.message);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

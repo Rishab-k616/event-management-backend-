@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel | College Event Management</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #0f172a;
+      color: #f1f5f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #1e293b;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .admin-container {
+      background-color: #1e293b;
+      padding: 30px;
+      border-radius: 15px;
+      max-width: 700px;
+      margin: 40px auto;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      background-color: #334155;
+      color: #f1f5f9;
+    }
+
+    input[type="file"] {
+      background-color: transparent;
+    }
+
+    button {
+      background-color: #38bdf8;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #0f172a;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #0ea5e9;
+    }
+
+    h2 {
+      color: #38bdf8;
+    }
+
+    /* Event List Styles */
+    .event-list {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 25px;
+  justify-items: center;
+}
+
+.event-card {
+  background-color: #334155;
+  padding: 20px;
+  border-radius: 14px;
+  width: 260px;
+  text-align: center;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.event-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+.event-card img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.event-card h3 {
+  color: #38bdf8;
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+
+.event-card p {
+  margin: 4px 0;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+}
+
+.event-card button {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+.event-card button:hover {
+  background-color: #dc2626;
+}
+
+    #message {
+      color: #38bdf8;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>🎓 GU Events - Admin Panel</h1>
+  </header>
+
+  <div class="admin-container">
+    <h2>Add New Event</h2>
+    <!-- ✅ Fixed: Added missing IDs -->
+    <form id="eventForm" enctype="multipart/form-data">
+      <input type="text" id="title" name="title" placeholder="Event Title" required />
+      <textarea id="description" name="description" placeholder="Event Description" required></textarea>
+      <input type="date" id="date" name="date" required />
+      <input type="file" id="image" name="image" accept="image/*" />
+      <button type="submit">Add Event</button>
+    </form>
+
+    <p id="message"></p>
+
+    <div class="event-list" id="eventList">
+      <h2>Existing Events</h2>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, getDocs, deleteDoc, doc
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import {
+      getStorage, ref, uploadBytes, getDownloadURL, deleteObject
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+    // ✅ Fixed Firebase config (storageBucket corrected)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBSPmiOa60NAJ0KLniR0Vdby7yEU27ihBQ",
+      authDomain: "ourgueventapp.firebaseapp.com",
+      projectId: "ourgueventapp",
+      storageBucket: "ourgueventapp.appspot.com",
+      messagingSenderId: "616548274363",
+      appId: "1:616548274363:web:5bd175552ff2f73a8f199e",
+      measurementId: "G-HQD8JYLRNY"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    const form = document.getElementById("eventForm");
+    const msg = document.getElementById("message");
+    const eventList = document.getElementById("eventList");
+
+    // ✅ Add Event with Image
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const title = document.getElementById("title").value;
+      const description = document.getElementById("description").value;
+      const date = document.getElementById("date").value;
+      const imageFile = document.getElementById("image").files[0];
+
+      if (!imageFile) {
+        msg.textContent = "❌ Please choose an image.";
+        return;
+      }
+
+      try {
+        const storageRef = ref(storage, "event_images/" + Date.now() + "_" + imageFile.name);
+        await uploadBytes(storageRef, imageFile);
+        const imageUrl = await getDownloadURL(storageRef);
+
+        await addDoc(collection(db, "events"), { title, description, date, imageUrl });
+        msg.textContent = "✅ Event added successfully!";
+        form.reset();
+        loadEvents();
+      } catch (error) {
+        msg.textContent = "❌ " + error.message;
+        console.error(error);
+      }
+    });
+
+    // ✅ Load Events with Image
+    async function loadEvents() {
+      eventList.innerHTML = "<h2>Existing Events</h2>";
+      const querySnapshot = await getDocs(collection(db, "events"));
+      querySnapshot.forEach((docSnap) => {
+        const event = docSnap.data();
+        const div = document.createElement("div");
+        div.classList.add("event-card");
+        div.innerHTML = `
+          ${event.imageUrl ? `<img src="${event.imageUrl}" alt="${event.title}" />` : ""}
+          <h3>${event.title}</h3>
+          <p>${event.description}</p>
+          <p><strong>Date:</strong> ${event.date}</p>
+          <button onclick="deleteEvent('${docSnap.id}', '${event.imageUrl || ""}')">🗑️ Delete</button>
+        `;
+        eventList.appendChild(div);
+      });
+    }
+
+    // ✅ Delete Event & its Image
+    window.deleteEvent = async function (id, imageUrl) {
+      try {
+        if (imageUrl) {
+          const imageRef = ref(storage, imageUrl);
+          await deleteObject(imageRef).catch(() => {});
+        }
+        await deleteDoc(doc(db, "events", id));
+        alert("✅ Event deleted!");
+        loadEvents();
+      } catch (error) {
+        alert("❌ Error deleting: " + error.message);
+      }
+    };
+
+    // Load all events initially
+    loadEvents();
+  </script>
+</body>
+</html>
